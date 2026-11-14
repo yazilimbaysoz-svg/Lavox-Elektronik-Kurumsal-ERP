@@ -8,6 +8,10 @@
 
 </div>
 
+[![İndir: v2.0.0](https://img.shields.io/github/v/release/yazilimbaysoz-svg/Lavox-Elektronik-Kurumsal-ERP?label=Lavox_ERP_Setup.exe&color=0078d4)](https://github.com/yazilimbaysoz-svg/Lavox-Elektronik-Kurumsal-ERP/releases/tag/v2.0.0)
+
+**📦 [Windows Kurulum Sihirbazı v2.0.0 indir](https://github.com/yazilimbaysoz-svg/Lavox-Elektronik-Kurumsal-ERP/releases/tag/v2.0.0)** — `Lavox_ERP_Setup.exe` doğrudan [v2.0.0 Release sayfası](https://github.com/yazilimbaysoz-svg/Lavox-Elektronik-Kurumsal-ERP/releases/tag/v2.0.0) üzerinden indirilebilir.
+
 ---
 
 ## Proje hakkında
