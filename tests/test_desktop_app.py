@@ -74,10 +74,10 @@ class DesktopStartupTests(unittest.TestCase):
             should_exit = False
 
             def __init__(self, _config: Any) -> None:
-                pass
+                self.config = _config
 
             def run(self) -> None:
-                return
+                self.should_exit = True
 
         runner = BackendRunner()
         with (
