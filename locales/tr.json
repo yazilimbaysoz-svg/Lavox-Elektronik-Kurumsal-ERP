@@ -1,0 +1,111 @@
+{
+  "desktop": {
+    "splash": {
+      "title": "LAVOX ELEKTRONİK",
+      "subtitle": "Kurumsal ERP v2.0",
+      "loading": "Kurumsal çalışma alanı hazırlanıyor...",
+      "ready": "Güvenli çalışma alanı hazır.",
+      "statuses": [
+        "Veritabanı bağlantısı doğrulanıyor...",
+        "Stok ve Teknik Servis modülleri yükleniyor...",
+        "BAYSÖZ YAZILIM KVKK Güvenlik Kalkanı aktif..."
+      ]
+    },
+    "startup_error": "LAVOX masaüstü uygulaması başlatılamadı. Sunucu ve masaüstü çalışma zamanı gereksinimlerini kontrol edin."
+  },
+  "actions": {
+    "backup": "Veritabanı yedeği al",
+    "close": "Kapat",
+    "export_csv": "CSV dışa aktar",
+    "print_pdf": "Yazdır / PDF olarak kaydet",
+    "search_serials": "Seri numarası ara",
+    "search_tickets": "Servis kaydı ara"
+  },
+  "alerts": {
+    "button": "Bildirimler",
+    "empty": "Şu anda işlem gerektiren bir bildirim yok.",
+    "live": "Beş dakikada bir güncellenir",
+    "low_stock": "Kritik stok",
+    "low_stock_detail": "{name} · {quantity} adet kaldı",
+    "open": "İşletme bildirimlerini aç",
+    "overdue": "Vadesi geçen tahsilat",
+    "overdue_detail": "{document} · {amount}",
+    "service_waiting": "Parça bekleyen servis",
+    "service_waiting_detail": "{ticket} · {days} gündür bekliyor",
+    "title": "İşletme bildirimleri"
+  },
+  "backup": {
+    "download_started": "Veritabanı yedeği indiriliyor.",
+    "failed": "Veritabanı yedeği alınamadı."
+  },
+  "messages": {
+    "theme_error": "Tema tercihi kaydedilemedi."
+  },
+  "command": {
+    "escape": "Esc",
+    "hint": "Sonuç seçmek için Enter",
+    "no_results": "Aramanızla eşleşen kayıt bulunamadı.",
+    "new_ticket": "Yeni teknik servis kaydı aç",
+    "open": "Ürün, seri no, cari veya servis ara",
+    "placeholder": "Ürün, seri numarası, cari veya servis ara",
+    "quick_sale": "Hızlı POS satışı başlat",
+    "search_error": "Arama sonuçları yüklenemedi. Yeniden deneyin.",
+    "shortcuts": "F2 · Hızlı satış     F3 · Yeni servis kaydı",
+    "shortcut": "Ctrl / ⌘ K",
+    "start_typing": "Ürün, seri numarası, müşteri veya servis koduyla arayın.",
+    "title": "Hızlı arama ve komutlar"
+  },
+  "exports": {
+    "downloaded": "CSV dosyası indirildi."
+  },
+  "print": {
+    "brand": "LAVOX ELEKTRONİK",
+    "customer": "Müşteri",
+    "device": "Cihaz",
+    "document_date": "Düzenleme tarihi",
+    "document_due": "Vade tarihi",
+    "document_no": "Belge numarası",
+    "document_type": "Belge türü",
+    "intake_date": "Kabul tarihi",
+    "issue": "Arıza bildirimi",
+    "parts": "Kullanılan parçalar",
+    "signature_customer": "Müşteri imzası",
+    "signature_staff": "Yetkili imzası",
+    "status": "Durum",
+    "subtotal": "Ara toplam",
+    "tax": "Vergi",
+    "total": "Genel toplam",
+    "warranty": "Garanti talebi",
+    "warranty_yes": "Evet",
+    "warranty_no": "Hayır"
+  },
+  "theme": {
+    "dark": "Koyu tema",
+    "light": "Açık tema",
+    "toggle": "Açık ve koyu tema arasında geçiş yap"
+  },
+  "whatsapp": {
+    "copy": "Mesajı kopyala",
+    "copied": "Müşteri mesajı panoya kopyalandı.",
+    "copy_failed": "Mesaj panoya kopyalanamadı. Metni seçip kopyalayabilirsiniz.",
+    "default": "Sayın {name}, {ticket} numaralı teknik servis kaydınızda {device} cihazınızın durumu “{status}” olarak güncellendi. Bilginize sunar, iyi günler dileriz. · Tahmini ücret: {fee}",
+    "eyebrow": "MÜŞTERİ BİLGİLENDİRME",
+    "message_label": "Gönderilecek mesaj",
+    "open": "WhatsApp Web'i aç",
+    "opened": "WhatsApp Web yeni sekmede açıldı. Mesajı buraya yapıştırabilirsiniz.",
+    "privacy": "Mesaj cihazınızda hazırlanır. WhatsApp Web'e müşteri bilgisi aktarılmaz.",
+    "popup_blocked": "Tarayıcı yeni sekmeyi engelledi. WhatsApp Web'i açmak için izin verin.",
+    "ready": "Sayın {name}, {ticket} numaralı teknik servis kaydınızdaki {device} cihazınızın onarımı tamamlandı ve cihazınız teslim almaya hazır. İyi günler dileriz. · Servis ücreti: {fee}",
+    "title": "Servis durum mesajı",
+    "waiting_parts": "Sayın {name}, {ticket} numaralı teknik servis kaydınızdaki {device} cihazınız için yedek parça bekliyoruz. Parça ulaştığında işleminize devam edeceğiz. Anlayışınız için teşekkür ederiz. · Tahmini ücret: {fee}"
+  },
+  "service": {
+    "delivery_receipt": "Servis teslim fişi",
+    "intake_receipt": "Servis kabul fişi",
+    "print_receipt": "Fiş yazdır",
+    "whatsapp": "WhatsApp mesajı"
+  },
+  "sales": {
+    "serial_quantity": "Seri numarası izlenen ürünler satışa birer adet eklenmelidir."
+  }
+}

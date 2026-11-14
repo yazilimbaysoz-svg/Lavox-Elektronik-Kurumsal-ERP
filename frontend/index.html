@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111a2e">
+  <meta name="description" content="LAVOX Elektronik kurumsal kaynak planlama sistemi">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/styles.css">
+  <title>LAVOX | Kurumsal ERP</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="LAVOX ana sayfa">
+        <span class="brand-mark">L</span>
+        <span class="brand-copy"><strong>LAVOX</strong><small>ELEKTRONİK ERP</small></span>
+      </a>
+      <div class="nav-caption" data-i18n="nav.workspace">ÇALIŞMA ALANI</div>
+      <nav id="module-nav" class="module-nav" aria-label="Ana gezinme">
+        <button class="nav-item active" type="button" data-module="dashboard"><span class="nav-icon">⌂</span><span data-i18n="nav.dashboard">Kontrol Paneli</span></button>
+        <button class="nav-item" type="button" data-module="inventory"><span class="nav-icon">▦</span><span data-i18n="nav.inventory">Stok Yönetimi</span></button>
+        <button class="nav-item" type="button" data-module="serials"><span class="nav-icon">⌗</span><span data-i18n="nav.serials">Seri No Takibi</span></button>
+        <button class="nav-item" type="button" data-module="service"><span class="nav-icon">⚙</span><span data-i18n="nav.service">Teknik Servis</span></button>
+        <button class="nav-item" type="button" data-module="sales"><span class="nav-icon">▣</span><span data-i18n="nav.sales">POS Satış</span></button>
+        <button class="nav-item" type="button" data-module="purchasing"><span class="nav-icon">⇩</span><span data-i18n="nav.purchasing">Satın Alma</span></button>
+        <button class="nav-item" type="button" data-module="parties"><span class="nav-icon">♧</span><span data-i18n="nav.parties">Cari Hesaplar</span></button>
+        <button class="nav-item" type="button" data-module="finance"><span class="nav-icon">₺</span><span data-i18n="nav.finance">Kasa ve Banka</span></button>
+        <button class="nav-item" type="button" data-module="documents"><span class="nav-icon">▤</span><span data-i18n="nav.documents">Teklif ve Fatura</span></button>
+        <button class="nav-item" type="button" data-module="analytics"><span class="nav-icon">▥</span><span data-i18n="nav.analytics">Analitik ve Raporlar</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-status"><span class="status-dot"></span><span data-i18n="app.local">Yerel ve güvenli bağlantı</span></div>
+        <div class="user-card">
+          <span id="user-avatar" class="avatar">L</span>
+          <span class="user-meta"><strong id="user-name">LAVOX</strong><small id="user-role">Oturum açılmadı</small></span>
+          <button id="logout-button" class="icon-button" type="button" aria-label="Oturumu kapat" title="Oturumu kapat">↪</button>
+        </div>
+        <div class="sidebar-foot">© 2026 LAVOX Elektronik</div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb"><span data-i18n="app.name">LAVOX ERP</span><span class="crumb-separator">/</span><strong id="page-title">Kontrol Paneli</strong></div>
+        <div class="topbar-actions">
+          <span id="workspace-context" class="workspace-context" aria-live="polite"></span>
+          <button id="command-button" class="global-search command-trigger" type="button" aria-haspopup="dialog"><span aria-hidden="true">⌕</span><span data-i18n="command.open">Ürün, cari veya servis ara</span><kbd data-i18n="command.shortcut">Ctrl / ⌘ K</kbd></button>
+          <div class="notification-wrap">
+            <button id="notification-button" class="button button-quiet notification-button" type="button" aria-expanded="false" aria-controls="notification-popover" data-i18n-aria-label="alerts.open" aria-label="Bildirimleri aç">
+              <span class="notification-bell" aria-hidden="true">♢</span><span class="notification-label" data-i18n="alerts.button">Bildirimler</span><span id="notification-count" class="notification-count" hidden>0</span>
+            </button>
+            <section id="notification-popover" class="notification-popover" aria-label="Bildirimler" hidden>
+              <div class="notification-heading"><div><strong data-i18n="alerts.title">İşletme bildirimleri</strong><small id="notification-updated" data-i18n="alerts.live">Canlı takip</small></div><button id="notification-refresh" class="icon-button light-icon" type="button" data-i18n-aria-label="actions.refresh" aria-label="Yenile">⟳</button></div>
+              <div id="notification-list" class="notification-list" aria-live="polite"></div>
+            </section>
+          </div>
+          <button id="theme-button" class="button button-quiet theme-button" type="button" aria-pressed="false" data-i18n-aria-label="theme.toggle" aria-label="Temayı değiştir"><span aria-hidden="true">☾</span><span data-i18n="theme.light">Açık tema</span></button>
+          <button id="backup-button" class="button button-quiet backup-button" type="button"><span aria-hidden="true">⇩</span><span data-i18n="actions.backup">Veritabanı yedeği al</span></button>
+          <span id="today-label" class="today-label"></span>
+          <button id="refresh-button" class="button button-quiet" type="button"><span aria-hidden="true">⟳</span><span data-i18n="actions.refresh">Yenile</span></button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <div id="module-loading" class="loading-indicator" role="status" hidden><span class="spinner"></span><span data-i18n="messages.loading">Veriler yükleniyor…</span></div>
+        <div class="page-intro">
+          <div><p id="page-eyebrow" class="eyebrow">LAVOX ELEKTRONİK</p><h1 id="page-heading">Kontrol Paneli</h1><p id="page-description" class="page-description"></p></div>
+          <span class="date-pill"><span class="status-dot"></span><span data-i18n="app.system_active">Sistem aktif</span></span>
+        </div>
+
+        <section class="module-view active" id="view-dashboard" data-view="dashboard">
+          <div class="kpi-grid">
+            <article class="kpi-card accent-blue"><div class="kpi-top"><span data-i18n="dashboard.kpi_sales">Bugünkü satış</span><span class="kpi-icon">₺</span></div><strong id="kpi-today-sales">—</strong><small id="kpi-sale-count">—</small></article>
+            <article class="kpi-card accent-violet"><div class="kpi-top"><span data-i18n="dashboard.kpi_month">Aylık satış</span><span class="kpi-icon">↗</span></div><strong id="kpi-month-sales">—</strong><small id="kpi-month-count">—</small></article>
+            <article class="kpi-card accent-amber"><div class="kpi-top"><span data-i18n="dashboard.kpi_service">Açık servis kaydı</span><span class="kpi-icon">⚙</span></div><strong id="kpi-open-service">—</strong><small data-i18n="dashboard.kpi_service_hint">Tamamlanmayı bekleyen işler</small></article>
+            <article class="kpi-card accent-green"><div class="kpi-top"><span data-i18n="dashboard.kpi_cash">Aylık net nakit</span><span class="kpi-icon">◈</span></div><strong id="kpi-net-cash">—</strong><small data-i18n="dashboard.kpi_cash_hint">Gelir ve gider farkı</small></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel panel-large">
+              <div class="panel-heading"><div><p class="eyebrow" data-i18n="dashboard.sales_eyebrow">PERFORMANS</p><h2 data-i18n="dashboard.sales_title">Satış özeti</h2></div><button class="text-button" type="button" data-go="analytics" data-i18n="actions.view_report">Raporları görüntüle →</button></div>
+              <div class="sales-overview">
+                <div class="sales-total"><span data-i18n="dashboard.month_revenue">Bu ayın cirosu</span><strong id="dashboard-month-total">—</strong><small id="dashboard-month-meta">—</small></div>
+                <div class="mini-bars" id="sales-bars" aria-label="Son dönem satış grafiği"></div>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading"><div><p class="eyebrow" data-i18n="dashboard.alert_eyebrow">TAKİP GEREKİYOR</p><h2 data-i18n="dashboard.alert_title">Öne çıkanlar</h2></div></div>
+              <div class="alert-stack">
+                <button class="alert-link" type="button" data-go="inventory"><span class="alert-icon alert-warning">!</span><span><strong data-i18n="dashboard.low_stock">Kritik stok</strong><small id="low-stock-summary">—</small></span><span class="alert-count" id="low-stock-count">0</span></button>
+                <button class="alert-link" type="button" data-go="documents"><span class="alert-icon alert-danger">₺</span><span><strong data-i18n="dashboard.overdue">Vadesi geçen belgeler</strong><small id="overdue-summary">—</small></span><span class="alert-count" id="overdue-count">0</span></button>
+                <button class="alert-link" type="button" data-go="service"><span class="alert-icon alert-info">⚙</span><span><strong data-i18n="dashboard.repairs">Tamamlanan servis</strong><small data-i18n="dashboard.repairs_hint">Bu dönem tamamlanan kayıtlar</small></span><span class="alert-count" id="completed-repairs">0</span></button>
+              </div>
+            </section>
+            <section class="panel panel-full">
+              <div class="panel-heading"><div><p class="eyebrow" data-i18n="inventory.eyebrow">ENVANTER</p><h2 data-i18n="inventory.critical_title">Kritik stok uyarıları</h2></div><button class="text-button" type="button" data-go="inventory" data-i18n="actions.view_all">Tümünü görüntüle →</button></div>
+              <div class="table-wrap"><table><thead><tr><th data-i18n="labels.product">Ürün</th><th data-i18n="labels.category">Kategori</th><th data-i18n="labels.warehouse">Depo</th><th data-i18n="labels.stock">Mevcut stok</th><th data-i18n="labels.critical_stock">Kritik seviye</th></tr></thead><tbody id="dashboard-low-stock"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-inventory" data-view="inventory" hidden>
+          <div class="module-toolbar"><div><span class="module-chip" data-i18n="modules.inventory">Stok Yönetimi</span><span id="inventory-count" class="muted"></span></div><label class="filter-field"><span data-i18n="labels.warehouse">Depo</span><select id="inventory-warehouse"></select></label></div>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="inventory.form_eyebrow">KATALOG</p><h2 data-i18n="inventory.form_title">Yeni ürün tanımla</h2></div></div>
+              <form id="product-form" class="form-grid">
+                <label><span data-i18n="labels.sku">Stok kodu</span><input name="sku" required maxlength="64" placeholder="PHN-001"></label>
+                <label><span data-i18n="labels.product_name">Ürün adı</span><input name="name" required maxlength="120"></label>
+                <label><span data-i18n="labels.category">Kategori</span><input name="category" required maxlength="80"></label>
+                <label><span data-i18n="labels.brand">Marka</span><input name="brand" required maxlength="80"></label>
+                <label><span data-i18n="labels.unit_price">Birim fiyat (₺)</span><input name="unit_price" type="number" min="0" step="0.01" required></label>
+                <label><span data-i18n="labels.critical_stock">Kritik stok seviyesi</span><input name="critical_stock_level" type="number" min="0" value="5" required></label>
+                <label class="span-two"><span data-i18n="labels.description">Açıklama</span><input name="description" maxlength="240"></label>
+                <label class="checkbox-label span-two"><input name="is_tracked_serial" type="checkbox"><span data-i18n="inventory.serial_track">Seri numarası takibi kullan</span></label>
+                <div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.save_product">Ürünü kaydet</button></div>
+              </form>
+            </section>
+            <section class="panel panel-table"><div class="panel-heading"><div><p class="eyebrow" data-i18n="inventory.list_eyebrow">ÜRÜN KATALOĞU</p><h2 data-i18n="inventory.list_title">Ürünler</h2></div><div class="table-toolbar-actions"><button id="export-inventory" class="button button-secondary button-small" type="button" data-i18n="actions.export_csv">CSV dışa aktar</button><label class="search-field"><span>⌕</span><input id="product-search" type="search" data-i18n-placeholder="actions.search_products" placeholder="Ürün ara"></label></div></div>
+              <div class="table-wrap"><table><thead><tr><th data-i18n="labels.product">Ürün</th><th data-i18n="labels.category">Kategori</th><th data-i18n="labels.warehouse">Depo</th><th data-i18n="labels.stock">Stok</th><th data-i18n="labels.unit_price">Birim fiyat</th></tr></thead><tbody id="products-table"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-serials" data-view="serials" hidden>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow" data-i18n="serials.eyebrow">VARLIK TAKİBİ</p><h2 data-i18n="serials.title">Seri numarası ve garanti</h2></div><div class="toolbar-inline"><label class="search-field"><span>⌕</span><input id="serial-search" type="search" data-i18n-placeholder="actions.search_serials" placeholder="Seri no ara"></label><label class="filter-field"><span data-i18n="labels.status">Durum</span><select id="serial-status"></select></label><button class="button button-secondary" id="serial-refresh" type="button" data-i18n="actions.refresh">Yenile</button></div></div>
+            <div class="table-wrap"><table><thead><tr><th data-i18n="labels.serial">Seri numarası</th><th data-i18n="labels.product">Ürün</th><th data-i18n="labels.warehouse">Depo</th><th data-i18n="labels.status">Durum</th><th data-i18n="labels.warranty_end">Garanti bitişi</th><th data-i18n="labels.imei">IMEI</th></tr></thead><tbody id="serials-table"></tbody></table></div>
+          </section>
+          <div class="content-grid two-column">
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="serials.warranty_eyebrow">GARANTİ SORGULA</p><h2 data-i18n="serials.warranty_title">Garanti durumu</h2></div></div>
+              <form id="warranty-form" class="inline-form"><label class="grow"><span data-i18n="labels.serial">Seri numarası</span><input name="serial_number" required></label><button class="button button-primary" type="submit" data-i18n="actions.query">Sorgula</button></form><div id="warranty-result" class="result-box" hidden></div>
+            </section>
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="serials.transfer_eyebrow">DEPO HAREKETİ</p><h2 data-i18n="serials.transfer_title">Seri numarası transferi</h2></div></div>
+              <form id="transfer-form" class="form-grid"><label class="span-two"><span data-i18n="labels.serial">Seri numarası</span><input name="serial_number" required></label><label><span data-i18n="serials.from_warehouse">Kaynak depo</span><select name="from_warehouse_id" required></select></label><label><span data-i18n="serials.to_warehouse">Hedef depo</span><select name="to_warehouse_id" required></select></label><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.transfer">Transfer et</button></div></form>
+            </section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-service" data-view="service" hidden>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="service.form_eyebrow">SERVİS KABUL</p><h2 data-i18n="service.form_title">Yeni servis kaydı</h2></div></div>
+              <form id="service-form" class="form-grid"><label><span data-i18n="labels.customer">Müşteri / firma</span><input name="customer_name" required></label><label><span data-i18n="labels.phone">Telefon (isteğe bağlı)</span><input name="customer_phone" inputmode="tel"></label><label><span data-i18n="labels.device_brand">Cihaz markası</span><input name="device_brand" required></label><label><span data-i18n="labels.device_model">Cihaz modeli</span><input name="device_model" required></label><label><span data-i18n="labels.serial">Seri numarası</span><input name="serial_number"></label><label><span data-i18n="labels.priority">Öncelik</span><select name="priority" data-options="priorities"></select></label><label class="span-two"><span data-i18n="labels.problem">Arıza açıklaması</span><textarea name="problem_description" required rows="3" maxlength="1000"></textarea></label><label class="checkbox-label span-two"><input name="warranty_claim" type="checkbox"><span data-i18n="service.warranty_claim">Garanti kapsamında değerlendir</span></label><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.create_ticket">Servis kaydı aç</button></div></form>
+            </section>
+            <section class="panel panel-table"><div class="panel-heading"><div><p class="eyebrow" data-i18n="service.list_eyebrow">İŞ EMİRLERİ</p><h2 data-i18n="service.list_title">Servis kayıtları</h2></div><div class="table-toolbar-actions"><button id="export-service" class="button button-secondary button-small" type="button" data-i18n="actions.export_csv">CSV dışa aktar</button><label class="search-field"><span>⌕</span><input id="service-search" type="search" data-i18n-placeholder="actions.search_tickets" placeholder="Servis kaydı ara"></label><label class="filter-field"><span data-i18n="labels.status">Durum</span><select id="service-status"></select></label></div></div>
+              <div class="table-wrap"><table><thead><tr><th data-i18n="labels.ticket">Servis no</th><th data-i18n="labels.customer">Müşteri</th><th data-i18n="labels.device">Cihaz</th><th data-i18n="labels.priority">Öncelik</th><th data-i18n="labels.status">Durum</th><th data-i18n="labels.actions">İşlem</th></tr></thead><tbody id="service-table"></tbody></table></div>
+            </section>
+          </div>
+          <section class="panel receipt-panel" id="service-receipt" hidden></section>
+        </section>
+
+        <section class="module-view" id="view-sales" data-view="sales" hidden>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="sales.form_eyebrow">SATIŞ NOKTASI</p><h2 data-i18n="sales.form_title">Yeni POS satışı</h2></div></div>
+              <form id="sale-form" class="form-grid"><label><span data-i18n="labels.customer_code">Müşteri kodu (isteğe bağlı)</span><select name="customer_code"></select></label><label><span data-i18n="labels.warehouse">Depo</span><select name="warehouse_id" required></select></label><label><span data-i18n="labels.payment_method">Ödeme yöntemi</span><select name="payment_method" data-options="payments"></select></label><label><span data-i18n="labels.currency">Para birimi</span><select name="currency" data-options="currencies"></select></label>
+                <div class="line-items-wrap span-two"><div class="line-items-heading"><strong data-i18n="sales.item_title">Satış kalemi</strong><button class="text-button" id="add-sale-line" type="button" data-i18n="actions.add_line">+ Kalem ekle</button></div><div id="sale-lines"></div></div>
+                <div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.complete_sale">Satışı tamamla</button></div></form>
+            </section>
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="sales.recent_eyebrow">İŞLEM GEÇMİŞİ</p><h2 data-i18n="sales.recent_title">Son satışlar</h2></div></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.document_no">Fiş numarası</th><th data-i18n="labels.customer_code">Müşteri</th><th data-i18n="labels.total">Toplam</th><th data-i18n="labels.date">Tarih</th></tr></thead><tbody id="sales-table"></tbody></table></div></section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-purchasing" data-view="purchasing" hidden>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="purchasing.form_eyebrow">TEDARİK</p><h2 data-i18n="purchasing.form_title">Satın alma emri oluştur</h2></div></div>
+              <form id="purchase-form" class="form-grid"><label><span data-i18n="labels.supplier">Tedarikçi</span><select name="supplier_code" required></select></label><label><span data-i18n="labels.warehouse">Teslim alınacak depo</span><select name="warehouse_id" required></select></label><label><span data-i18n="labels.expected_date">Beklenen teslim tarihi</span><input name="expected_date" type="date"></label><label><span data-i18n="purchasing.terms">Durum</span><input value="Taslak" disabled></label><div class="line-items-wrap span-two"><div class="line-items-heading"><strong data-i18n="purchasing.items">Sipariş kalemleri</strong><button class="text-button" id="add-purchase-line" type="button" data-i18n="actions.add_line">+ Kalem ekle</button></div><div id="purchase-lines"></div></div><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.create_order">Sipariş oluştur</button></div></form>
+            </section>
+            <section class="panel panel-table"><div class="panel-heading"><div><p class="eyebrow" data-i18n="purchasing.list_eyebrow">TEDARİK AKIŞI</p><h2 data-i18n="purchasing.list_title">Satın alma emirleri</h2></div></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.document_no">Sipariş no</th><th data-i18n="labels.supplier">Tedarikçi</th><th data-i18n="labels.total">Toplam</th><th data-i18n="labels.expected_date">Beklenen tarih</th><th data-i18n="labels.status">Durum</th><th data-i18n="labels.actions">İşlem</th></tr></thead><tbody id="purchase-table"></tbody></table></div></section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-parties" data-view="parties" hidden>
+          <div class="module-toolbar"><span class="module-chip" data-i18n="modules.parties">Müşteri ve tedarikçi yönetimi</span><label class="filter-field"><span data-i18n="labels.type">Kayıt türü</span><select id="party-type"></select></label></div>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="parties.form_eyebrow">CARİ KART</p><h2 data-i18n="parties.form_title">Yeni cari kart</h2></div></div>
+              <form id="party-form" class="form-grid"><label><span data-i18n="labels.type">Kayıt türü</span><select name="type" data-options="partyTypes"></select></label><label><span data-i18n="labels.code">Cari kodu</span><input name="code" required maxlength="32" placeholder="C-ORNEK"></label><label class="span-two"><span data-i18n="labels.name">Ad / firma adı</span><input name="name" required maxlength="120"></label><label><span data-i18n="labels.email">E-posta (isteğe bağlı)</span><input name="email" type="email" maxlength="120"></label><label><span data-i18n="labels.phone">Telefon (isteğe bağlı)</span><input name="phone" inputmode="tel" maxlength="24"></label><label><span data-i18n="labels.city">Şehir</span><input name="city" maxlength="80"></label><label><span data-i18n="labels.credit_limit">Kredi limiti (₺)</span><input name="credit_limit" type="number" min="0" step="0.01" value="0"></label><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.create_party">Cari kartı kaydet</button></div></form>
+              <p class="privacy-note"><span>◇</span><span data-i18n="parties.privacy">İletişim bilgileri yalnızca iş süreçleri için kullanılır.</span></p>
+            </section>
+            <section class="panel panel-table"><div class="panel-heading"><div><p class="eyebrow" data-i18n="parties.list_eyebrow">İŞ ORTAKLARI</p><h2 data-i18n="parties.list_title">Müşteri ve tedarikçiler</h2></div><div class="table-toolbar-actions"><button id="export-parties" class="button button-secondary button-small" type="button" data-i18n="actions.export_csv">CSV dışa aktar</button><label class="search-field"><span>⌕</span><input id="party-search" type="search" data-i18n-placeholder="actions.search_parties" placeholder="Cari ara"></label></div></div>
+              <div class="table-wrap"><table><thead><tr><th data-i18n="labels.party">Cari</th><th data-i18n="labels.type">Tür</th><th data-i18n="labels.city">Şehir</th><th data-i18n="labels.balance">Bakiye</th><th data-i18n="labels.credit_limit">Kredi limiti</th></tr></thead><tbody id="parties-table"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-finance" data-view="finance" hidden>
+          <div class="content-grid">
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="finance.transaction_eyebrow">NAKİT AKIŞI</p><h2 data-i18n="finance.transaction_title">Hareket kaydet</h2></div></div>
+              <form id="transaction-form" class="form-grid"><label class="span-two"><span data-i18n="labels.account">Hesap</span><select name="account_id" required></select></label><label><span data-i18n="labels.type">Hareket türü</span><select name="type" data-options="transactionTypes"></select></label><label><span data-i18n="labels.amount">Tutar</span><input name="amount" type="number" min="0.01" step="0.01" required></label><label><span data-i18n="labels.currency">Para birimi</span><select name="currency" data-options="currencies"></select></label><label><span data-i18n="labels.description">Açıklama</span><input name="description" maxlength="160"></label><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.save_transaction">Hareketi kaydet</button></div></form>
+            </section>
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="finance.accounts_eyebrow">HESAPLAR</p><h2 data-i18n="finance.accounts_title">Kasa ve banka bakiyeleri</h2></div></div><div id="account-cards" class="account-grid"></div></section>
+            <section class="panel panel-full"><div class="panel-heading"><div><p class="eyebrow" data-i18n="finance.history_eyebrow">SON İŞLEMLER</p><h2 data-i18n="finance.history_title">Finans hareketleri</h2></div><button id="export-finance" class="button button-secondary button-small" type="button" data-i18n="actions.export_csv">CSV dışa aktar</button></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.date">Tarih</th><th data-i18n="labels.account">Hesap</th><th data-i18n="labels.type">Tür</th><th data-i18n="labels.amount">Tutar</th><th data-i18n="labels.currency">Para birimi</th></tr></thead><tbody id="transactions-table"></tbody></table></div></section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-documents" data-view="documents" hidden>
+          <div class="content-grid">
+            <section class="panel form-panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="documents.form_eyebrow">BELGE YÖNETİMİ</p><h2 data-i18n="documents.form_title">Teklif veya fatura oluştur</h2></div></div>
+              <form id="document-form" class="form-grid"><label><span data-i18n="labels.type">Belge türü</span><select name="type" data-options="documentTypes"></select></label><label><span data-i18n="labels.customer">Müşteri</span><select name="customer_code" required></select></label><label><span data-i18n="labels.status">Durum</span><select name="status" data-options="documentStatuses"></select></label><label><span data-i18n="labels.currency">Para birimi</span><select name="currency" data-options="currencies"></select></label><label><span data-i18n="labels.issue_date">Düzenleme tarihi</span><input name="issue_date" type="date" required></label><label><span data-i18n="labels.due_date">Vade tarihi</span><input name="due_date" type="date"></label><div class="line-items-wrap span-two"><div class="line-items-heading"><strong data-i18n="documents.items">Belge kalemi</strong><button class="text-button" id="add-document-line" type="button" data-i18n="actions.add_line">+ Kalem ekle</button></div><div id="document-lines"></div></div><div class="form-actions span-two"><button class="button button-primary" type="submit" data-i18n="actions.create_document">Belge oluştur</button></div></form>
+            </section>
+            <section class="panel panel-table"><div class="panel-heading"><div><p class="eyebrow" data-i18n="documents.list_eyebrow">BELGE ARŞİVİ</p><h2 data-i18n="documents.list_title">Teklif ve faturalar</h2></div></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.document_no">Belge no</th><th data-i18n="labels.type">Tür</th><th data-i18n="labels.customer_code">Müşteri kodu</th><th data-i18n="labels.total">Toplam</th><th data-i18n="labels.due_date">Vade tarihi</th><th data-i18n="labels.status">Durum</th><th data-i18n="labels.actions">İşlem</th></tr></thead><tbody id="documents-table"></tbody></table></div></section>
+          </div>
+        </section>
+
+        <section class="module-view" id="view-analytics" data-view="analytics" hidden>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="analytics.eyebrow">YÖNETİM RAPORLARI</p><h2 data-i18n="analytics.title">Dönemsel kâr ve zarar</h2></div></div>
+            <form id="report-form" class="report-form"><label><span data-i18n="analytics.start_date">Başlangıç</span><input name="start_date" type="date" required></label><label><span data-i18n="analytics.end_date">Bitiş</span><input name="end_date" type="date" required></label><button class="button button-primary" type="submit" data-i18n="actions.run_report">Raporu oluştur</button></form>
+          </section>
+          <section id="report-results" class="report-results" aria-live="polite"></section>
+          <div class="content-grid two-column"><section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="analytics.overdue_eyebrow">TAHSİLAT TAKİBİ</p><h2 data-i18n="analytics.overdue_title">Vade uyarıları</h2></div></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.document_no">Belge no</th><th data-i18n="labels.customer_code">Müşteri</th><th data-i18n="labels.due_date">Vade</th><th data-i18n="labels.days_overdue">Gecikme</th><th data-i18n="labels.total">Tutar</th></tr></thead><tbody id="overdue-table"></tbody></table></div></section>
+            <section class="panel"><div class="panel-heading"><div><p class="eyebrow" data-i18n="analytics.defects_eyebrow">KALİTE TAKİBİ</p><h2 data-i18n="analytics.defects_title">Arızalı ürünler</h2></div></div><div class="table-wrap"><table><thead><tr><th data-i18n="labels.product">Ürün</th><th data-i18n="labels.brand">Marka</th><th data-i18n="analytics.defect_count">Arıza adedi</th></tr></thead><tbody id="defects-table"></tbody></table></div></section>
+          </div>
+        </section>
+
+        <footer class="app-footer"><span data-i18n="app.footer">Veriler bu bilgisayardaki kurumsal veritabanında saklanır.</span><span>LAVOX ERP <span id="app-version"></span></span></footer>
+      </div>
+    </main>
+  </div>
+
+  <div id="command-layer" class="overlay" hidden>
+    <section class="command-palette" role="dialog" aria-modal="true" aria-labelledby="command-title">
+      <div class="command-search-row"><span aria-hidden="true">⌕</span><input id="command-input" type="search" autocomplete="off" data-i18n-placeholder="command.placeholder" placeholder="Ürün, seri numarası, cari veya servis ara"><button id="command-close" class="shortcut-key" type="button" data-i18n="command.escape">Esc</button></div>
+      <h2 id="command-title" class="visually-hidden" data-i18n="command.title">Hızlı arama ve komutlar</h2>
+      <div id="command-results" class="command-results"></div>
+      <footer class="command-footer"><span data-i18n="command.shortcuts">F2 · Hızlı satış &nbsp; F3 · Yeni servis kaydı</span><span data-i18n="command.hint">Sonuç seçmek için Enter</span></footer>
+    </section>
+  </div>
+
+  <div id="record-layer" class="overlay" hidden>
+    <section class="record-dialog" role="dialog" aria-modal="true" aria-labelledby="record-heading">
+      <header class="modal-header"><div><p class="eyebrow" data-i18n="print.brand">LAVOX ELEKTRONİK</p><h2 id="record-heading">Belge</h2></div><button id="record-close-icon" class="icon-button light-icon" type="button" data-i18n-aria-label="actions.close" aria-label="Kapat">×</button></header>
+      <article id="record-content" class="print-document"></article>
+      <footer class="modal-actions"><button id="record-close" class="button button-secondary" type="button" data-i18n="actions.close">Kapat</button><button id="record-print" class="button button-primary" type="button" data-i18n="actions.print_pdf">Yazdır / PDF olarak kaydet</button></footer>
+    </section>
+  </div>
+
+  <div id="message-layer" class="overlay" hidden>
+    <section class="record-dialog message-dialog" role="dialog" aria-modal="true" aria-labelledby="message-heading">
+      <header class="modal-header"><div><p class="eyebrow" data-i18n="whatsapp.eyebrow">MÜŞTERİ BİLGİLENDİRME</p><h2 id="message-heading" data-i18n="whatsapp.title">Servis durum mesajı</h2></div><button id="message-close-icon" class="icon-button light-icon" type="button" data-i18n-aria-label="actions.close" aria-label="Kapat">×</button></header>
+      <p class="privacy-note"><span>◇</span><span data-i18n="whatsapp.privacy">Mesaj cihazınızda hazırlanır. WhatsApp Web'e müşteri bilgisi aktarılmaz.</span></p>
+      <label class="message-label" for="service-message" data-i18n="whatsapp.message_label">Gönderilecek mesaj</label>
+      <textarea id="service-message" rows="7" readonly></textarea>
+      <footer class="modal-actions"><button id="message-close" class="button button-secondary" type="button" data-i18n="actions.close">Kapat</button><button id="message-whatsapp" class="button button-secondary" type="button" data-i18n="whatsapp.open">WhatsApp Web'i aç</button><button id="message-copy" class="button button-primary" type="button" data-i18n="whatsapp.copy">Mesajı kopyala</button></footer>
+    </section>
+  </div>
+
+  <div id="login-layer" class="login-layer" hidden>
+    <section class="login-card" aria-labelledby="login-title">
+      <div class="login-visual">
+        <div class="login-brand"><span class="brand-mark">L</span><span><strong>LAVOX</strong><small>ELEKTRONİK ERP</small></span></div>
+        <p class="eyebrow" data-i18n="auth.secure_workspace">GÜVENLİ ÇALIŞMA ALANI</p>
+        <h1 data-i18n="auth.enterprise">Kurumsal iş yönetimi, tek merkezde.</h1>
+        <p class="login-visual-copy" data-i18n="auth.enterprise_description">Stok, satış ve teknik servis süreçlerinizi güvenli çalışma alanınızdan yönetin.</p>
+        <div class="login-visual-footer"><span class="status-dot"></span><span data-i18n="auth.local_only">Kimlik bilgileriniz bu uygulamanın yerel sunucusuna iletilir.</span></div>
+      </div>
+      <div class="login-panel">
+        <p class="eyebrow" data-i18n="auth.signin_eyebrow">KULLANICI GİRİŞİ</p>
+        <h2 id="login-title" data-i18n="auth.welcome">Kurumsal çalışma alanınıza giriş yapın</h2>
+        <p class="login-description" data-i18n="auth.description">Devam etmek için şube ve kullanıcı bilgilerinizi seçin.</p>
+        <form id="login-form" class="login-form" autocomplete="off">
+          <div class="login-context-fields">
+            <label><span data-i18n="auth.branch">Şube</span><select name="branch" autocomplete="off"><option value="central" data-i18n="auth.branches.central">Merkez Şube</option><option value="technical_service" data-i18n="auth.branches.technical_service">Teknik Servis</option></select></label>
+            <label><span data-i18n="auth.fiscal_year">Mali yıl</span><select name="fiscal_year" autocomplete="off"><option value="2026" selected>2026</option></select></label>
+          </div>
+          <label><span data-i18n="auth.username">Kullanıcı adı</span><input name="username" autocomplete="username" required></label>
+          <label><span data-i18n="auth.password">Parola</span><input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="button button-primary button-wide" type="submit" data-i18n="auth.signin">Güvenli oturum aç</button>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+        </form>
+        <div class="login-panel-foot"><span aria-hidden="true">◇</span><span data-i18n="auth.session_note">Şube ve mali yıl tercihi bu oturum için kullanılır.</span></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
