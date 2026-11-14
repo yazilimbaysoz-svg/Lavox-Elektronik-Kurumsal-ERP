@@ -567,20 +567,27 @@ internal sealed class InstallerWizard : Form
             );
         }
 
-        worker.ReportProgress(88, "ERP Python paketleri yükleniyor (fastapi, uvicorn, pydantic)...");
+        string requirementsFile = Path.Combine(targetDirectory, "requirements-runtime.txt");
+        worker.ReportProgress(88, "ERP Python paketleri yükleniyor (requirements-runtime.txt)...");
+        if (!File.Exists(requirementsFile))
+        {
+            throw new InvalidOperationException(
+                "requirements-runtime.txt kurulum dosyasında eksik. Kurulumu tekrar deneyin."
+            );
+        }
+        string pipExe = Path.Combine(scriptsDir, "pip.exe");
+        if (!File.Exists(pipExe))
+        {
+            throw new InvalidOperationException(
+                "pip çalıştırıcısı sanal ortamda bulunamadı. Kurulumu tekrar deneyin."
+            );
+        }
         RunProcess(
-            pythonExe,
-            "-m pip install --upgrade pip",
+            pipExe,
+            "install -r \"" + requirementsFile + "\"",
             targetDirectory,
             worker,
-            180000
-        );
-        RunProcess(
-            pythonExe,
-            "-m pip install --quiet fastapi uvicorn pydantic",
-            targetDirectory,
-            worker,
-            300000
+            600000
         );
 
         worker.ReportProgress(95, "Python çalışma ortamı hazır.");

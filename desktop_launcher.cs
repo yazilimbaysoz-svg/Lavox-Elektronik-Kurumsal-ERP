@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Web.Script.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 internal sealed class StartupResult
@@ -126,6 +127,7 @@ internal sealed class LauncherContext : ApplicationContext
     private const int PreferredPort = 8010;
     private readonly string _installRoot;
     private readonly string _dataRoot;
+    private readonly string _startupLogPath;
     private readonly StartupSplash _splash;
     private readonly NotifyIcon _trayIcon;
     private Process _backendProcess;
@@ -142,6 +144,12 @@ internal sealed class LauncherContext : ApplicationContext
         _dataRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Lavox_ERP"
+        );
+        _startupLogPath = Path.Combine(_dataRoot, "startup.log");
+        Directory.CreateDirectory(_dataRoot);
+        AppendStartupLog(
+            _startupLogPath,
+            "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] Lavox ERP başlatma oturumu başlatıldı."
         );
         _splash = new StartupSplash();
         _backendProcess = null;
@@ -250,18 +258,37 @@ internal sealed class LauncherContext : ApplicationContext
         string dataFolder = Path.Combine(_dataRoot, "data");
         Directory.CreateDirectory(dataFolder);
 
+        AppendStartupLog(
+            _startupLogPath,
+            "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] Çalışma kökü: " + _installRoot
+        );
+
         PythonRuntime python = ResolvePythonRuntime();
         if (python == null)
         {
+            AppendStartupLog(
+                _startupLogPath,
+                "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] HATA: Python çalışma ortamı bulunamadı."
+            );
             throw new InvalidOperationException(
                 "Lavox ERP yerel Python çalışma ortamı bulunamadı. " +
                 "Uygulamayı yeniden kurun veya kurulum sihirbazını tekrar çalıştırın."
             );
         }
 
-        if (IsLavoxHealthy(PreferredPort))
+        AppendStartupLog(
+            _startupLogPath,
+            "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] Python çalışma zamanı: " + python.PythonwPath
+        );
+
+        string baseUrl = BuildUrl(PreferredPort);
+        if (IsLavoxHealthy(PreferredPort) || IsUrlRespondingOk(baseUrl + "/"))
         {
-            return BuildUrl(PreferredPort);
+            AppendStartupLog(
+                _startupLogPath,
+                "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] Port 8010 zaten yanıt veriyor; çift sunucu başlatılmıyor."
+            );
+            return baseUrl;
         }
 
         if (!IsPortAvailable(PreferredPort))
@@ -271,19 +298,29 @@ internal sealed class LauncherContext : ApplicationContext
             );
         }
 
-        RunSeed(python.PythonPath, dataFolder);
+        string seedExe = python.PythonPath ?? python.PythonwPath;
+        RunSeed(seedExe, dataFolder);
 
-        ProcessStartInfo startInfo = CreateProcessInfo(python.PythonwPath);
+        string launchExe = File.Exists(python.PythonwPath) ? python.PythonwPath : python.PythonPath;
+        ProcessStartInfo startInfo = CreateProcessInfo(launchExe);
         startInfo.Arguments =
             "-m uvicorn backend.main:app --host 127.0.0.1 --port 8010 " +
             "--log-level error --no-access-log";
         startInfo.WorkingDirectory = _installRoot;
         startInfo.EnvironmentVariables["LAVOX_DATA_ROOT"] = _dataRoot;
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
         Process process = Process.Start(startInfo);
         if (process == null)
         {
+            AppendStartupLog(
+                _startupLogPath,
+                "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] HATA: python işlemi başlatılamadı."
+            );
             throw new InvalidOperationException("Yerel ERP arka ucu başlatılamadı.");
         }
+
+        Task.Run(() => RedirectProcessOutput(process, _startupLogPath));
 
         lock (_processLock)
         {
@@ -295,15 +332,29 @@ internal sealed class LauncherContext : ApplicationContext
             }
         }
 
+        AppendStartupLog(
+            _startupLogPath,
+            "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] Uvicorn başlatıldı (PID " + process.Id + ")."
+        );
+
         DateTime deadline = DateTime.UtcNow.AddSeconds(35);
         while (DateTime.UtcNow < deadline)
         {
             if (IsLavoxHealthy(PreferredPort))
             {
-                return BuildUrl(PreferredPort);
+                AppendStartupLog(
+                    _startupLogPath,
+                    "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] ERP arka ucu hazır (HTTP 200)."
+                );
+                return baseUrl;
             }
             if (process.HasExited)
             {
+                AppendStartupLog(
+                    _startupLogPath,
+                    "[" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") + "] HATA: python işlemi beklenmedik çıkış yaptı (kod " +
+                    process.ExitCode + ")."
+                );
                 throw new InvalidOperationException(
                     "ERP arka ucu başlatılamadı. Yerel Python çalışma ortamını ve kurulumu doğrulayın."
                 );
@@ -315,6 +366,59 @@ internal sealed class LauncherContext : ApplicationContext
         throw new InvalidOperationException(
             "ERP arka ucu zamanında hazır olmadı. Yerel Python çalışma ortamını ve kurulumu doğrulayın."
         );
+    }
+
+    private bool IsUrlRespondingOk(string url)
+    {
+        try
+        {
+            using (var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) })
+            {
+                var response = client.GetAsync(url).GetAwaiter().GetResult();
+                return response.StatusCode == System.Net.HttpStatusCode.OK;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void AppendStartupLog(string logPath, string message)
+    {
+        try
+        {
+            File.AppendAllText(logPath, message + Environment.NewLine);
+        }
+        catch
+        {
+        }
+    }
+
+    private static void RedirectProcessOutput(Process process, string logPath)
+    {
+        try
+        {
+            if (process != null && !process.HasExited)
+            {
+                string stdout = process.StandardOutput.ReadToEnd();
+                if (stdout.Length > 0)
+                {
+                    AppendStartupLog(logPath, "[uvicorn stdout] " + stdout);
+                }
+            }
+            if (process != null)
+            {
+                string stderr = process.StandardError.ReadToEnd();
+                if (stderr.Length > 0)
+                {
+                    AppendStartupLog(logPath, "[uvicorn stderr] " + stderr);
+                }
+            }
+        }
+        catch
+        {
+        }
     }
 
     private void RunSeed(string pythonPath, string workingDirectory)
@@ -360,18 +464,85 @@ internal sealed class LauncherContext : ApplicationContext
 
     private PythonRuntime ResolvePythonRuntime()
     {
-        string venvScripts = Path.Combine(_installRoot, ".venv", "Scripts");
-        string pythonExe = Path.Combine(venvScripts, "python.exe");
-        string pythonwExe = Path.Combine(venvScripts, "pythonw.exe");
-        if (!File.Exists(pythonExe) || !File.Exists(pythonwExe))
+        // (a) BaseDirectory\.venv\Scripts\pythonw.exe
+        // (b) BaseDirectory\.venv\Scripts\python.exe
+        string baseScripts = Path.Combine(_installRoot, ".venv", "Scripts");
+        string basePythonw = Path.Combine(baseScripts, "pythonw.exe");
+        string basePython = Path.Combine(baseScripts, "python.exe");
+        if (File.Exists(basePythonw) || File.Exists(basePython))
         {
-            return null;
+            return new PythonRuntime
+            {
+                PythonPath = File.Exists(basePython) ? basePython : null,
+                PythonwPath = File.Exists(basePythonw) ? basePythonw : null
+            };
         }
-        return new PythonRuntime
+
+        // (c) C:\Users\MÜSLÜM BAYSÖZ\Desktop\BAYSOZ_YAZILIM\.venv\Scripts\pythonw.exe
+        string fallbackScripts = @"C:\Users\MÜSLÜM BAYSÖZ\Desktop\BAYSOZ_YAZILIM\.venv\Scripts";
+        string fallbackPythonw = Path.Combine(fallbackScripts, "pythonw.exe");
+        string fallbackPython = Path.Combine(fallbackScripts, "python.exe");
+        if (File.Exists(fallbackPythonw) || File.Exists(fallbackPython))
         {
-            PythonPath = pythonExe,
-            PythonwPath = pythonwExe
-        };
+            return new PythonRuntime
+            {
+                PythonPath = File.Exists(fallbackPython) ? fallbackPython : null,
+                PythonwPath = File.Exists(fallbackPythonw) ? fallbackPythonw : null
+            };
+        }
+
+        // (d) System PATH (where.exe pythonw / where.exe python)
+        foreach (string command in new[] { "pythonw", "python" })
+        {
+            string found = LocateExecutableOnPath(command);
+            if (found != null)
+            {
+                return new PythonRuntime
+                {
+                    PythonPath = command.Equals("python", StringComparison.OrdinalIgnoreCase) ? found : null,
+                    PythonwPath = command.Equals("pythonw", StringComparison.OrdinalIgnoreCase) ? found : null
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private static string LocateExecutableOnPath(string command)
+    {
+        try
+        {
+            using (Process where = Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = "where.exe",
+                    Arguments = command,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            ))
+            {
+                if (where == null || !where.WaitForExit(10000))
+                {
+                    return null;
+                }
+                string output = where.StandardOutput.ReadToEnd();
+                foreach (string line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string trimmed = line.Trim();
+                    if (trimmed.Length > 0 && File.Exists(trimmed))
+                    {
+                        return trimmed;
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+        return null;
     }
 
     private static bool IsLavoxHealthy(int port)

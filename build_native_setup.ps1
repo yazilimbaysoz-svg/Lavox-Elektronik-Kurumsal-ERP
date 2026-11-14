@@ -38,6 +38,7 @@ try {
         "/reference:System.dll",
         "/reference:System.Core.dll",
         "/reference:System.Drawing.dll",
+        "/reference:System.Net.Http.dll",
         "/reference:System.Windows.Forms.dll",
         "/reference:System.Web.Extensions.dll",
         ("/win32icon:" + $iconPath),
@@ -49,7 +50,7 @@ try {
         throw "The native Lavox launcher compilation failed."
     }
 
-    foreach ($directoryName in @("backend", "frontend", "locales")) {
+    foreach ($directoryName in @("backend", "frontend", "locales", "assets")) {
         $sourceDirectory = Join-Path $projectRoot $directoryName
         if (-not (Test-Path $sourceDirectory)) {
             throw ("Required project directory is missing: " + $directoryName)
@@ -74,7 +75,7 @@ try {
     $archivePath = Join-Path $stagingDirectory "Lavox_ProjectArchive.zip"
     $packageRoot = Join-Path $stagingDirectory "package-root"
     New-Item -ItemType Directory -Path $packageRoot | Out-Null
-    foreach ($directoryName in @("backend", "frontend", "locales")) {
+    foreach ($directoryName in @("backend", "frontend", "locales", "assets")) {
         Copy-Item -LiteralPath (Join-Path $stagingDirectory $directoryName) `
             -Destination $packageRoot -Recurse -Force
     }
