@@ -250,12 +250,12 @@ internal sealed class LauncherContext : ApplicationContext
         string dataFolder = Path.Combine(_dataRoot, "data");
         Directory.CreateDirectory(dataFolder);
 
-        PythonRuntime python = FindPythonRuntime();
+        PythonRuntime python = ResolvePythonRuntime();
         if (python == null)
         {
             throw new InvalidOperationException(
-                "Bu bilgisayarda Python 3, FastAPI ve Uvicorn bulunamadı. " +
-                "Lavox ERP'yi başlatmak için bu çalışma zamanı bileşenleri gereklidir."
+                "Lavox ERP yerel Python çalışma ortamı bulunamadı. " +
+                "Uygulamayı yeniden kurun veya kurulum sihirbazını tekrar çalıştırın."
             );
         }
 
@@ -264,14 +264,19 @@ internal sealed class LauncherContext : ApplicationContext
             return BuildUrl(PreferredPort);
         }
 
-        int port = IsPortAvailable(PreferredPort) ? PreferredPort : FindFreePort();
-        RunSeed(python, dataFolder);
+        if (!IsPortAvailable(PreferredPort))
+        {
+            throw new InvalidOperationException(
+                "ERP arka ucu için 8010 portu kullanımda. Lütfen portu boşaltın ve uygulamayı yeniden başlatın."
+            );
+        }
+
+        RunSeed(python.PythonPath, dataFolder);
 
         ProcessStartInfo startInfo = CreateProcessInfo(python.PythonwPath);
         startInfo.Arguments =
-            "-m uvicorn backend.main:app --host 127.0.0.1 --port " +
-            port.ToString() +
-            " --log-level error --no-access-log";
+            "-m uvicorn backend.main:app --host 127.0.0.1 --port 8010 " +
+            "--log-level error --no-access-log";
         startInfo.WorkingDirectory = _installRoot;
         startInfo.EnvironmentVariables["LAVOX_DATA_ROOT"] = _dataRoot;
         Process process = Process.Start(startInfo);
@@ -293,14 +298,14 @@ internal sealed class LauncherContext : ApplicationContext
         DateTime deadline = DateTime.UtcNow.AddSeconds(35);
         while (DateTime.UtcNow < deadline)
         {
-            if (IsLavoxHealthy(port))
+            if (IsLavoxHealthy(PreferredPort))
             {
-                return BuildUrl(port);
+                return BuildUrl(PreferredPort);
             }
             if (process.HasExited)
             {
                 throw new InvalidOperationException(
-                    "ERP arka ucu başlatılamadı. Python, FastAPI ve Uvicorn kurulumunu doğrulayın."
+                    "ERP arka ucu başlatılamadı. Yerel Python çalışma ortamını ve kurulumu doğrulayın."
                 );
             }
             Thread.Sleep(250);
@@ -308,13 +313,13 @@ internal sealed class LauncherContext : ApplicationContext
 
         StopOwnedBackend();
         throw new InvalidOperationException(
-            "ERP arka ucu zamanında hazır olmadı. Python, FastAPI ve Uvicorn kurulumunu doğrulayın."
+            "ERP arka ucu zamanında hazır olmadı. Yerel Python çalışma ortamını ve kurulumu doğrulayın."
         );
     }
 
-    private void RunSeed(PythonRuntime python, string workingDirectory)
+    private void RunSeed(string pythonPath, string workingDirectory)
     {
-        ProcessStartInfo seedInfo = CreateProcessInfo(python.PythonPath);
+        ProcessStartInfo seedInfo = CreateProcessInfo(pythonPath);
         seedInfo.Arguments =
             "-c \"from backend.seed_data import seed; seed()\"";
         seedInfo.WorkingDirectory = _installRoot;
@@ -353,55 +358,20 @@ internal sealed class LauncherContext : ApplicationContext
         return info;
     }
 
-    private static PythonRuntime FindPythonRuntime()
+    private PythonRuntime ResolvePythonRuntime()
     {
-        List<string> candidates = new List<string>();
-        string pathValue = Environment.GetEnvironmentVariable("PATH") ?? String.Empty;
-        string[] directories = pathValue.Split(Path.PathSeparator);
-        foreach (string directory in directories)
+        string venvScripts = Path.Combine(_installRoot, ".venv", "Scripts");
+        string pythonExe = Path.Combine(venvScripts, "python.exe");
+        string pythonwExe = Path.Combine(venvScripts, "pythonw.exe");
+        if (!File.Exists(pythonExe) || !File.Exists(pythonwExe))
         {
-            string cleanDirectory = directory.Trim().Trim('"');
-            if (cleanDirectory.Length == 0 || !Directory.Exists(cleanDirectory))
-            {
-                continue;
-            }
-
-            string python = Path.Combine(cleanDirectory, "python.exe");
-            string pythonw = Path.Combine(cleanDirectory, "pythonw.exe");
-            if (File.Exists(python) && File.Exists(pythonw))
-            {
-                candidates.Add(python);
-            }
+            return null;
         }
-
-        foreach (string pythonPath in candidates)
+        return new PythonRuntime
         {
-            string pythonwPath = Path.Combine(Path.GetDirectoryName(pythonPath), "pythonw.exe");
-            ProcessStartInfo checkInfo = CreateProcessInfo(pythonPath);
-            checkInfo.Arguments = "-c \"import fastapi,uvicorn\"";
-            try
-            {
-                using (Process check = Process.Start(checkInfo))
-                {
-                    if (check != null && check.WaitForExit(12000) && check.ExitCode == 0)
-                    {
-                        PythonRuntime runtime = new PythonRuntime();
-                        runtime.PythonPath = pythonPath;
-                        runtime.PythonwPath = pythonwPath;
-                        return runtime;
-                    }
-                    if (check != null && !check.HasExited)
-                    {
-                        check.Kill();
-                    }
-                }
-            }
-            catch (System.ComponentModel.Win32Exception)
-            {
-            }
-        }
-
-        return null;
+            PythonPath = pythonExe,
+            PythonwPath = pythonwExe
+        };
     }
 
     private static bool IsLavoxHealthy(int port)

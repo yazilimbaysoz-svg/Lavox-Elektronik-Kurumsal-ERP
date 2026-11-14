@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.IO.Compression;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -230,7 +231,7 @@ internal sealed class InstallerWizard : Form
             _content.Controls.Add(_licenseAccepted);
 
             AddBody(
-                "Başlatmak için Python 3, FastAPI, Uvicorn ve Microsoft Edge veya Google Chrome gerekir. Paket listesi requirements-runtime.txt dosyasındadır. Bu sihirbaz bileşenleri indirmez veya yüklemez.",
+                "Başlatmak için Python 3, FastAPI, Uvicorn ve Microsoft Edge veya Google Chrome gerekir. Sihirbaz, kurulum sırasında yerel bir Python sanal ortamı (.venv) oluşturur ve gerekli Python paketlerini (fastapi, uvicorn, pydantic) sessizce yükler.",
                 34,
                 276,
                 700,
@@ -505,6 +506,7 @@ internal sealed class InstallerWizard : Form
         InstallRequest request = (InstallRequest)e.Argument;
         Directory.CreateDirectory(request.TargetDirectory);
         ExtractProjectArchive(request.TargetDirectory, (BackgroundWorker)sender);
+        EnsurePythonRuntime(request.TargetDirectory, (BackgroundWorker)sender);
         InstallNativeLauncher(request.TargetDirectory);
 
         if (request.CreateDesktopShortcut)
@@ -516,6 +518,192 @@ internal sealed class InstallerWizard : Form
         result.TargetDirectory = request.TargetDirectory;
         result.CreateDesktopShortcut = request.CreateDesktopShortcut;
         e.Result = result;
+    }
+
+    private void EnsurePythonRuntime(string targetDirectory, BackgroundWorker worker)
+    {
+        string venvRoot = Path.Combine(targetDirectory, ".venv");
+        string scriptsDir = Path.Combine(venvRoot, "Scripts");
+        string pythonExe = Path.Combine(scriptsDir, "python.exe");
+        string pythonwExe = Path.Combine(scriptsDir, "pythonw.exe");
+
+        worker.ReportProgress(76, "Python çalışma ortamı denetleniyor...");
+        if (File.Exists(pythonwExe) && File.Exists(pythonExe))
+        {
+            return;
+        }
+
+        worker.ReportProgress(78, "Sistem Python çalışma zamanı aranıyor...");
+        string systemPython = LocateSystemPython();
+        if (systemPython == null)
+        {
+            worker.ReportProgress(80, "Python sistemde yok. Yerleşik Python paketi indiriliyor...");
+            systemPython = DownloadPortablePython(targetDirectory, worker);
+        }
+        if (systemPython == null)
+        {
+            throw new InvalidOperationException(
+                "Python 3 çalışma zamanını bu bilgisayarda bulunamadı. " +
+                "Lütfen Python 3.10 veya üzerini yükleyin ve kurulumu tekrar deneyin."
+            );
+        }
+
+        if (!Directory.Exists(venvRoot))
+        {
+            worker.ReportProgress(82, "Sanal Python ortamı (.venv) oluşturuluyor...");
+            RunProcess(
+                systemPython,
+                "-m venv \"" + venvRoot + "\"",
+                targetDirectory,
+                worker,
+                120000
+            );
+        }
+
+        if (!File.Exists(pythonwExe) || !File.Exists(pythonExe))
+        {
+            throw new InvalidOperationException(
+                "Sanal Python ortamı oluşturulamadı. Kurulum klasörü izinlerini kontrol edin."
+            );
+        }
+
+        worker.ReportProgress(88, "ERP Python paketleri yükleniyor (fastapi, uvicorn, pydantic)...");
+        RunProcess(
+            pythonExe,
+            "-m pip install --upgrade pip",
+            targetDirectory,
+            worker,
+            180000
+        );
+        RunProcess(
+            pythonExe,
+            "-m pip install --quiet fastapi uvicorn pydantic",
+            targetDirectory,
+            worker,
+            300000
+        );
+
+        worker.ReportProgress(95, "Python çalışma ortamı hazır.");
+    }
+
+    private string LocateSystemPython()
+    {
+        foreach (string command in new[] { "py", "python" })
+        {
+            try
+            {
+                using (Process check = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = command,
+                        Arguments = "--version",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    }
+                ))
+                {
+                    if (check != null && check.WaitForExit(10000) && check.ExitCode == 0)
+                    {
+                        return command;
+                    }
+                }
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
+
+        string[] commonPaths = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python312", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python311", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Python312", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Python311", "python.exe")
+        };
+        foreach (string candidate in commonPaths)
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private string DownloadPortablePython(string targetDirectory, BackgroundWorker worker)
+    {
+        string embedRoot = Path.Combine(targetDirectory, ".python-embed");
+        string embedExe = Path.Combine(embedRoot, "python.exe");
+        if (File.Exists(embedExe))
+        {
+            return embedExe;
+        }
+
+        const string url = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip";
+        string zipPath = Path.Combine(Path.GetTempPath(), "lavox-python-embed.zip");
+
+        try
+        {
+            worker.ReportProgress(82, "Yerleşik Python paketi indiriliyor (bu adım birkaç dakika sürebilir)...");
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile(url, zipPath);
+            }
+
+            worker.ReportProgress(85, "Yerleşik Python paketi çıkartılıyor...");
+            Directory.CreateDirectory(embedRoot);
+            ZipFile.ExtractToDirectory(zipPath, embedRoot);
+
+            if (!File.Exists(embedExe))
+            {
+                return null;
+            }
+
+            try { File.Delete(zipPath); } catch { }
+            return embedExe;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void RunProcess(string fileName, string arguments, string workingDirectory, BackgroundWorker worker, int timeoutMs)
+    {
+        using (Process process = Process.Start(
+            new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            }
+        ))
+        {
+            if (process == null)
+            {
+                throw new InvalidOperationException("İşlem başlatılamadı: " + fileName);
+            }
+            if (!process.WaitForExit(timeoutMs))
+            {
+                try { process.Kill(); } catch { }
+                throw new InvalidOperationException("İşlem zaman aşımına uğradı: " + fileName);
+            }
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    "İşlem başarısız oldu (çıkış kodu " + process.ExitCode + "): " + fileName
+                );
+            }
+        }
     }
 
     private static void ExtractProjectArchive(string targetDirectory, BackgroundWorker worker)
